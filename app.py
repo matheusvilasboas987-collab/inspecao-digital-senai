@@ -200,11 +200,11 @@ def enviar_email(assunto, corpo_html, anexos_fotos=None):
     msg.add_alternative(corpo_html, subtype='html')
 
     if anexos_fotos:
-        for item_id, dados_foto in anexos_fotos.items():
-            if dados_foto and "bytes" in dados_foto:
-                foto_bytes = dados_foto["bytes"]
-                foto_nome = dados_foto.get("nome", f"foto_item_{item_id}.jpg")
-                ext = foto_nome.split('.')[-1].lower() if '.' in foto_nome else 'jpg'
+        for item_id, foto_file in anexos_fotos.items():
+            if foto_file is not None:
+                foto_file.seek(0)
+                foto_bytes = foto_file.read()
+                ext = foto_file.name.split('.')[-1].lower()
                 subtipo = "png" if ext == "png" else "jpeg"
                 
                 msg.add_attachment(
@@ -500,29 +500,29 @@ elif st.session_state.tela == "checklist":
             unsafe_allow_html=True
         )
 
-        # Garante inicialização da resposta do item
-        if item['id'] not in st.session_state.respostas_checklist:
-            st.session_state.respostas_checklist[item['id']] = {"status": None, "obs": "", "foto": None}
-
-        status_atual = st.session_state.respostas_checklist[item['id']].get("status", None)
+        status_atual = st.session_state.respostas_checklist.get(item['id'], {}).get("status", None)
         
         col_ok, col_nok = st.columns(2)
         with col_ok:
             btn_ok = st.button("✅ OK", use_container_width=True, type="primary" if status_atual == "OK" else "secondary")
             if btn_ok:
+                if item['id'] not in st.session_state.respostas_checklist:
+                    st.session_state.respostas_checklist[item['id']] = {}
                 st.session_state.respostas_checklist[item['id']]["status"] = "OK"
                 st.rerun()
 
         with col_nok:
             btn_nok = st.button("❌ N/OK", use_container_width=True, type="primary" if status_atual == "N/OK" else "secondary")
             if btn_nok:
+                if item['id'] not in st.session_state.respostas_checklist:
+                    st.session_state.respostas_checklist[item['id']] = {}
                 st.session_state.respostas_checklist[item['id']]["status"] = "N/OK"
                 st.rerun()
 
         st.markdown("<br>", unsafe_allow_html=True)
 
         with st.expander("📝 Observações e Evidência em Foto", expanded=(status_atual == "N/OK")):
-            obs_existente = st.session_state.respostas_checklist[item['id']].get("obs", "")
+            obs_existente = st.session_state.respostas_checklist.get(item['id'], {}).get("obs", "")
             observacao = st.text_area("Detalhes da inconformidade ou nota:", value=obs_existente, placeholder="Digite aqui se encontrar algum problema...", height=90)
             
             st.markdown("**📸 Evidência em Foto:**")
@@ -532,18 +532,6 @@ elif st.session_state.tela == "checklist":
                 key=f"file_{item['id']}"
             )
 
-            # SALVAMENTO IMEDIATO DA FOTO NA MEMÓRIA QUANDO TIRADA
-            if foto_capturada is not None:
-                st.session_state.respostas_checklist[item['id']]["foto"] = {
-                    "bytes": foto_capturada.getvalue(),
-                    "nome": foto_capturada.name
-                }
-
-            # EXIBE PRÉVIA DA FOTO JÁ CARREGADA/SALVA
-            foto_salva = st.session_state.respostas_checklist[item['id']].get("foto")
-            if foto_salva and "bytes" in foto_salva:
-                st.image(foto_salva["bytes"], caption="✅ Foto salva com sucesso!", width=220)
-
         st.markdown("<br>", unsafe_allow_html=True)
 
         # TRAVA OBRIGATÓRIA DE RESPOSTA
@@ -552,6 +540,9 @@ elif st.session_state.tela == "checklist":
                 st.warning("⚠️ Você precisa responder se o item está OK ou N/OK antes de avançar!")
             else:
                 st.session_state.respostas_checklist[item['id']]["obs"] = observacao
+                if foto_capturada is not None:
+                    st.session_state.respostas_checklist[item['id']]["foto"] = foto_capturada
+                
                 st.session_state.item_checklist_atual += 1
                 st.rerun()
 
@@ -577,13 +568,13 @@ elif st.session_state.tela == "checklist":
         fotos_para_anexar = {}
 
         for item in perguntas_checklist:
-            resp = st.session_state.respostas_checklist.get(item['id'], {"status": "OK", "obs": "", "foto": None})
+            resp = st.session_state.respostas_checklist.get(item['id'], {"status": "OK", "obs": ""})
             stts = resp.get("status", "OK")
             obs = resp.get("obs", "")
-            foto_dados = resp.get("foto", None)
+            foto = resp.get("foto", None)
             
-            if foto_dados and "bytes" in foto_dados:
-                fotos_para_anexar[item['id']] = foto_dados
+            if foto is not None:
+                fotos_para_anexar[item['id']] = foto
             
             if stts == "OK":
                 total_ok += 1
@@ -606,8 +597,8 @@ elif st.session_state.tela == "checklist":
                 unsafe_allow_html=True
             )
             
-            if foto_dados and "bytes" in foto_dados:
-                st.image(foto_dados["bytes"], caption=f"Evidência do item {item['id']}", width=200)
+            if foto is not None:
+                st.image(foto, caption=f"Evidência do item {item['id']}", width=200)
 
         col_stat1, col_stat2 = st.columns(2)
         col_stat1.metric("Itens Conformes (OK)", f"{total_ok}", delta=f"{int(total_ok/total_itens*100)}%")
@@ -629,7 +620,7 @@ elif st.session_state.tela == "checklist":
             """
 
             for item in perguntas_checklist:
-                resp = st.session_state.respostas_checklist.get(item['id'], {"status": "OK", "obs": "", "foto": None})
+                resp = st.session_state.respostas_checklist.get(item['id'], {"status": "OK", "obs": ""})
                 stts = resp.get("status", "OK")
                 obs = resp.get("obs", "")
                 tem_foto = resp.get("foto", None) is not None
