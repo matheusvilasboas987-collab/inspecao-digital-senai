@@ -11,7 +11,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Estilização CSS para ajustar as fontes e os Expanders
+# Estilização CSS com regras de cor PRETA para os Expanders
 SENAI_STYLE = """
 <style>
     :root {
@@ -21,6 +21,7 @@ SENAI_STYLE = """
         --senai-border: #ffffff;
     }
 
+    /* Trava o fundo da tela para não permitir rolagem */
     html, body, .stApp {
         background-color: var(--senai-blue-dark) !important;
         font-family: 'Segoe UI', Roboto, sans-serif;
@@ -33,6 +34,7 @@ SENAI_STYLE = """
         display: none;
     }
 
+    /* Reduz espaçamentos do bloco principal do Streamlit */
     .block-container {
         padding-top: 0.5rem !important;
         padding-bottom: 0.5rem !important;
@@ -41,6 +43,7 @@ SENAI_STYLE = """
         max-width: 450px !important;
     }
 
+    /* Cabeçalho do topo compacto */
     .login-header-text {
         color: white !important;
         text-align: center;
@@ -60,10 +63,12 @@ SENAI_STYLE = """
         margin: 0;
     }
 
+    /* Rótulos e Textos em Geral na Cor Branca */
     label, p, span, h1, h2, h3, h4, h5, h6, .stMarkdown, div[data-testid="stMarkdownContainer"] {
         color: #ffffff !important;
     }
 
+    /* Caixa Única com fundo escuro e fontes brancas */
     div.stContainer {
         background-color: rgba(255, 255, 255, 0.08) !important;
         border-radius: 24px !important;
@@ -72,6 +77,7 @@ SENAI_STYLE = """
         border: 1px solid rgba(255, 255, 255, 0.2) !important;
     }
 
+    /* Campos de Entrada */
     .stTextInput {
         margin-bottom: 5px !important;
     }
@@ -91,6 +97,7 @@ SENAI_STYLE = """
         height: 42px !important;
     }
 
+    /* Botão Principal Entrar */
     div.stButton > button {
         background-color: var(--senai-blue-button) !important;
         color: #ffffff !important;
@@ -107,6 +114,7 @@ SENAI_STYLE = """
         background-color: #001122 !important;
     }
 
+    /* REGRA ESPECÍFICA DE COR PRETA PARA OS EXPANDERS DA TELA 3 */
     .stExpander {
         background-color: #ffffff !important;
         border: 1px solid #d1d5db !important;
@@ -114,6 +122,7 @@ SENAI_STYLE = """
         margin-bottom: 10px !important;
     }
 
+    /* Título/Cabeçalho do Expander na cor PRETA */
     .streamlit-expanderHeader, 
     details summary,
     details summary p,
@@ -125,11 +134,13 @@ SENAI_STYLE = """
         font-weight: 800 !important;
     }
 
+    /* Ícone de seta do expander na cor preta */
     details summary svg {
         fill: #000000 !important;
         color: #000000 !important;
     }
 
+    /* Conteúdo interno do Expander totalmente na cor PRETA */
     div[data-testid="stExpanderDetails"] {
         background-color: #ffffff !important;
         color: #000000 !important;
@@ -141,6 +152,7 @@ SENAI_STYLE = """
         color: #000000 !important;
     }
 
+    /* BARRA FIXA NO TOPO PARA TELAS INTERNAS */
     .senai-internal-header {
         position: sticky;
         top: 0;
@@ -161,15 +173,8 @@ SENAI_STYLE = """
 
 st.markdown(SENAI_STYLE, unsafe_allow_html=True)
 
-# ==================== LEITURA DE PARÂMETROS DA URL (QR CODE) ====================
-query_params = st.query_params
-
 if "tela" not in st.session_state:
     st.session_state.tela = "login"
-
-# Guarda qual máquina foi lida no QR Code (se houver)
-if "maquina" in query_params:
-    st.session_state.maquina_qr = query_params["maquina"]
 
 def navegar(tela):
     st.session_state.tela = tela
@@ -220,7 +225,7 @@ def enviar_email(assunto, corpo_html, anexos_fotos=None):
     except Exception as e:
         return False, str(e)
 
-# SVG do Logo SENAI
+# SVG do Logo SENAI Ajustado
 SENAI_LOGO_WHITE_SVG = """
 <div style="text-align: center; margin-top: 5px; margin-bottom: 0px; margin-left: 25px;">
     <svg width="340" height="90" viewBox="0 0 360 95" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -246,18 +251,14 @@ if st.session_state.tela == "login":
         unsafe_allow_html=True
     )
 
+    # CAIXA ÚNICA COM TEXTOS EM BRANCO
     with st.container():
         usuario_input = st.text_input("👤 Usuário", placeholder="Digite seu usuário")
         senha = st.text_input("🔒 Senha", type="password", placeholder="Digite sua senha")
 
         if st.button("Entrar", use_container_width=True):
             st.session_state.usuario_logado = usuario_input if usuario_input else "Operador SENAI"
-            
-            # Se a pessoa acessou via QR Code de uma máquina específica, pula direto para ela!
-            if "maquina_qr" in st.session_state and st.session_state.maquina_qr == "torno":
-                navegar("detalhes_maquina")
-            else:
-                navegar("lista_maquinas")
+            navegar("lista_maquinas")
             st.rerun()
 
         st.markdown(
@@ -451,12 +452,16 @@ elif st.session_state.tela == "detalhes_maquina":
 # ==================== TELA 4: CHECKLIST ====================
 elif st.session_state.tela == "checklist":
     perguntas_checklist = [
-        {"id": 1, "titulo": "Proteção do Mandril", "pergunta": "A proteção do acrílico contra cavacos está íntegra e ativando o micro-switch de segurança?"},
-        {"id": 2, "titulo": "Botão de Emergência", "pergunta": "O botão tipo cogumelo de parada de emergência está desarmado e funcionando perfeitamente?"},
-        {"id": 3, "titulo": "Barramento Prismático", "pergunta": "O barramento está limpo, lubrificado com óleo ISO VG 68 e sem riscos/cavacos acumulados?"},
-        {"id": 4, "titulo": "Nível do Óleo da Caixa", "pergunta": "O visor do nível de óleo da caixa de roscas/avanços está no limite recomendado?"},
-        {"id": 5, "titulo": "Fluido de Refrigeração", "pergunta": "O reservatório do fluido de corte está abastecido e a bomba ativando sem ruídos?"},
-        {"id": 6, "titulo": "Cabeçote Móvel", "pergunta": "A alavanca de fixação do mangote e do contraponto está travando firmemente?"}
+        {"id": 1, "titulo": "Limpeza e Organização", "pergunta": "O equipamento apresenta condições gerais de limpeza e organização adequadas?"},
+        {"id": 2, "titulo": "Sistema de Lubrificação", "pergunta": "O sistema de lubrificação está funcionando corretamente e com nível adequado?"},
+        {"id": 3, "titulo": "Vazamentos de Óleo/Flutuantes", "pergunta": "Há vazamentos de óleo ou fluido hidráulico/refrigerante no equipamento?"},
+        {"id": 4, "titulo": "Condição do Mandril", "pergunta": "O mandril está em boas condições e apresenta fixação adequada da peça?"},
+        {"id": 5, "titulo": "Castanhas do Mandril", "pergunta": "As castanhas do mandril apresentam desgaste ou danos excessivos?"},
+        {"id": 6, "titulo": "Proteções de Segurança", "pergunta": "Os dispositivos de proteção e portas de segurança estão funcionando corretamente?"},
+        {"id": 7, "titulo": "Parada de Emergência", "pergunta": "O botão de parada de emergência está funcionando corretamente?"},
+        {"id": 8, "titulo": "Sistema de Refrigeração", "pergunta": "O sistema de refrigeração (fluido de corte) está funcionando adequadamente?"},
+        {"id": 9, "titulo": "Guias, Barramentos e Fusos", "pergunta": "Guias, barramentos e fusos apresentam condições adequadas, sem desgaste ou danos aparentes?"},
+        {"id": 10, "titulo": "Painel Elétrico e Conexões", "pergunta": "O painel elétrico, cabos e conexões aparentes apresentam condições adequadas, sem danos ou aquecimento anormal?"}
     ]
 
     total_itens = len(perguntas_checklist)
@@ -529,6 +534,7 @@ elif st.session_state.tela == "checklist":
 
         st.markdown("<br>", unsafe_allow_html=True)
 
+        # TRAVA OBRIGATÓRIA DE RESPOSTA
         if st.button("💾 Salvar e Próximo Item →", use_container_width=True):
             if status_atual is None:
                 st.warning("⚠️ Você precisa responder se o item está OK ou N/OK antes de avançar!")
