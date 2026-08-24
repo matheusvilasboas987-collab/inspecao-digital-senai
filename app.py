@@ -1,7 +1,10 @@
 import streamlit as st
 import smtplib
 from email.message import EmailMessage
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
+
+# Definição do Fuso Horário do Brasil (Horário de Brasília: UTC-3)
+FUSO_BR = timezone(timedelta(hours=-3))
 
 # ==================== CONFIGURAÇÃO DA PÁGINA ====================
 st.set_page_config(
@@ -417,7 +420,8 @@ elif st.session_state.tela == "detalhes_maquina":
             
             if st.form_submit_button("Enviar Requisição por E-mail", use_container_width=True):
                 usuario_atual = st.session_state.get("usuario_logado", "Operador SENAI")
-                data_hora_atual = datetime.now().strftime("%d/%m/%Y às %H:%M:%S")
+                # AJUSTADO PARA O FUSO DE BRASÍLIA
+                data_hora_atual = datetime.now(FUSO_BR).strftime("%d/%m/%Y às %H:%M:%S")
                 
                 assunto_req = f"🛒 Solicitação de Peça: {peca_selecionada.split(' - ')[0]} - Torno ROMI T 240"
                 corpo_req_html = f"""
@@ -550,7 +554,8 @@ elif st.session_state.tela == "checklist":
         st.markdown('<div class="senai-internal-header">Relatório Final de Inspeção</div>', unsafe_allow_html=True)
         
         usuario_atual = st.session_state.get("usuario_logado", "Operador SENAI")
-        data_hora_atual = datetime.now().strftime("%d/%m/%Y às %H:%M:%S")
+        # AJUSTADO PARA O FUSO DE BRASÍLIA
+        data_hora_atual = datetime.now(FUSO_BR).strftime("%d/%m/%Y às %H:%M:%S")
 
         st.markdown(
             f"""
